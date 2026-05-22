@@ -26,18 +26,16 @@ typedef struct s_philosopher
     pthread_t       thread;
     pthread_mutex_t *left_fork;
     pthread_mutex_t *right_fork;
+    pthread_mutex_t *print_mutex;
     int             meals_eaten;
     int             max_meals;
 }   t_philosopher;
 
-// мьютекс для вывода в консоль
-static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 static void safe_print(t_philosopher *philo, const char *msg)
 {
-    pthread_mutex_lock(&print_mutex);
+    pthread_mutex_lock(philo->print_mutex);
     printf("Philosopher %d %s\n", philo->id, msg);
-    pthread_mutex_unlock(&print_mutex);
+    pthread_mutex_unlock(philo->print_mutex);
 }
 
 // философ думает
@@ -138,6 +136,7 @@ static void *philosopher_routine(void *arg)
 int main(void)
 {
     pthread_mutex_t     forks[5];
+    pthread_mutex_t     print_mutex;
     t_philosopher       philosophers[5];
     int                 i;
     int                 num_philosophers = 5;
@@ -151,6 +150,8 @@ int main(void)
     printf("========================================\n\n");
     
     // инициализация мьютексов (вилок)
+    pthread_mutex_init(&print_mutex, NULL);
+
     i = 0;
     while (i < num_philosophers)
     {
@@ -167,6 +168,7 @@ int main(void)
         philosophers[i].flags = PHILO_NONE;
         philosophers[i].left_fork = &forks[i];
         philosophers[i].right_fork = &forks[(i + 1) % num_philosophers];
+        philosophers[i].print_mutex = &print_mutex;
         philosophers[i].meals_eaten = 0;
         philosophers[i].max_meals = max_meals;
         i++;
@@ -206,6 +208,7 @@ int main(void)
         pthread_mutex_destroy(&forks[i]);
         i++;
     }
+    pthread_mutex_destroy(&print_mutex);
     
     return (0);
 }
